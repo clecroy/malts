@@ -58,7 +58,7 @@ read_pages <- function(url_element) {
 
 
 ##### Call function
-########## NOTE this takes ~30 min to run ##########
+#### NOTE this takes ~30 min to run ####
 
 malts_raw <- lapply(url_list, read_pages)
 
@@ -81,4 +81,6 @@ write_csv(as.data.frame(malts), "C:/Users/clecroy/malts.csv")
 
 malts <- read_csv("C:/Users/clecroy/whisky/malts.csv")
 
-
+malts_c <- malts %>% unite("tot_desc", desc, reviews, sep=" ")
+malts_c$name[1:3]
+apply(malts_c$tot_desc, ant_join, )
