@@ -57,6 +57,7 @@ read_pages <- function(url_element) {
 }
 
 
+
 ##### Call function
 #### NOTE this takes ~30 min to run ####
 
