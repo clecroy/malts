@@ -69,7 +69,7 @@ malts$desc <- unlist(lapply(malts_raw, function(x) x[[1]]))
 malts$reviews <- unlist(lapply(malts_raw, function(x) x[[2]]))
 
 # save output
-write_csv(as.data.frame(malts), "C:/Users/clecroy/malts.csv")
+write_csv(as.data.frame(malts), "C:/Users/clecroy/malts/malts.csv")
 
 # detectCores()
 # 
@@ -79,7 +79,7 @@ write_csv(as.data.frame(malts), "C:/Users/clecroy/malts.csv")
 # 
 # stopCluster(cl)
 
-malts <- read_csv("C:/Users/clecroy/whisky/malts.csv")
+malts <- read_csv("C:/Users/clecroy/malts/malts.csv")
 
 malts_c <- malts %>% unite("tot_desc", desc, reviews, sep=" ")
 malts_c$name[1:3]
