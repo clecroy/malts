@@ -1,3 +1,3 @@
-# whisky
+# malts
 
 Under construction
