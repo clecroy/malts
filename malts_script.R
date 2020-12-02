@@ -5,54 +5,60 @@ library(xml2)
 library(microbenchmark)
 library(parallel)
 library(textreuse)
+library(polite)
+library(robotstxt)
 
-### ADD COMMENTS
+# session <- bow(malts_url)
+# session
 
-#### EXPORT PACKAGES AND FUNCTIONS TO CLUSTERS
+## Get product names and ids
 
-##### TEST PARALELL RUN OF read_pages
-
-
-  # Read html of 500 variety == "malt" results
-kl <- read_html("https://www.klwines.com/Products?&filters=sv2_206!27&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText=")
+  # Read html of spirits where variety == "malt", results >= 500
+malts_url <- "https://www.klwines.com/Products?&filters=sv2_206!27&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText="
+kl <- read_html(url)
 
   # Extract product names
 prod_name <- kl %>% 
   html_nodes('.tf-product-header') %>% 
   html_text()
 
-  # Get variety == "malt" results block from body node, store all children nodes
+  # Extract results block from body node, store all children nodes
 res_blk <- kl %>% 
   html_nodes('body') %>% 
-  xml_find_all("//div[contains(@class, 'results-block clearfix')]")%>% 
+  xml_find_all("//div[contains(@class, 'results-block clearfix')]") %>% 
   html_children()
 
   # Extract product ids as text from results block children nodes, remove names in vector
-ids <- res_blk[seq(1,length(res_blk),3)] %>% xml_attrs() %>% unlist()
+ids <- res_blk[seq(1,length(res_blk),3)] %>% 
+  xml_attrs() %>% 
+  unlist()
 names(ids) <- NULL
 
-# generate list of urls or each malt
+## Get product descriptions and reviews
+  # Generate list of urls for each malt
+
 url_list <- paste0("https://www.klwines.com/p/i?i=",ids)
 
-# function to store html of each product page; delay each fetch by 5 seconds
-
+  # Function to store html of each product page; delay each fetch by 5 seconds
+  
 prod <- list_along(1:length(url_list))
 
 read_pages <- function(url_element) {
+  
   prod_html <- read_html(url_element)
-  
-  prod_desc <- prod_html %>% 
-    html_nodes('p') %>% 
-    html_text() %>% 
+
+  prod_desc <- prod_html %>%
+    html_nodes('p') %>%
+    html_text() %>%
     paste(collapse="|")
-  
-  prod_revs <- prod_html %>% 
-    html_nodes('.ReviewTextDetail') %>% 
-    html_text() %>% 
+
+  prod_revs <- prod_html %>%
+    html_nodes('.ReviewTextDetail') %>%
+    html_text() %>%
     paste(collapse="|")
-  
+
   Sys.sleep(5)
-  
+
   return(c(prod_desc, prod_revs))
 }
 
@@ -63,24 +69,40 @@ read_pages <- function(url_element) {
 
 malts_raw <- lapply(url_list, read_pages)
 
-# organize and store results as dataframe: id, name, desc, reviews
+
+## Organize and store results as dataframe: id, name, desc, reviews
+
 malts <- data.frame("id" = as.numeric(ids))
-malts$name <- as.character(prod_name)
-malts$desc <- unlist(lapply(malts_raw, function(x) x[[1]]))
-malts$reviews <- unlist(lapply(malts_raw, function(x) x[[2]]))
+malts$name <- str_trim(as.character(prod_name))
+malts$desc <- str_trim(unlist(lapply(malts_raw, function(x) x[[1]])))
+malts$reviews <- str_trim(unlist(lapply(malts_raw, function(x) x[[2]])))
 
-# save output
-write_csv(as.data.frame(malts), "C:/Users/clecroy/malts/malts.csv")
+## Save output
+write_csv(as.data.frame(malts), "C:/malts/malts.csv")
 
-# detectCores()
-# 
-# cl <- makeCluster(6)
-# 
-# three_prod <- microbenchmark(parLapply(cl, url_list[1:6], read_pages))
-# 
-# stopCluster(cl)
+##################################################################
+##################################################################
+##################################################################
 
-malts <- read_csv("C:/Users/clecroy/malts/malts.csv")
+## Remove useless text related to special order only, preorder items, 
+## other notification text.
+
+# regex to use for substring removal, in THIS ORDER:
+
+# substrings beginning with "The item you have chosen..." until end
+# 
+
+# substrings begining and ending with "*"
+# ((\*)(.*)(?<=\*))
+
+# uses of "|" as individual characters
+#
+
+
+
+
+## Read output to restart analysis
+malts <- read_csv("C:/malts/malts.csv")
 
 malts_c <- malts %>% unite("tot_desc", desc, reviews, sep=" ")
 malts_c$name[1:3]
