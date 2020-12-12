@@ -84,16 +84,24 @@ write_csv(as.data.frame(malts), "C:/malts/malts.csv")
 ##################################################################
 ##################################################################
 
+## Read output to restart analysis
+malts <- read_csv("C:/malts/malts.csv")
+
 ## Remove useless text related to special order only, preorder items, 
 ## other notification text.
 
 # regex to use for substring removal, in THIS ORDER:
 
-# substrings beginning with "The item you have chosen..." until end
-# 
+# REMOVE substrings in $desc beginning with "|The item you...are any issues."
+str_replace(head(malts$desc), "^\|The\sitem\syou\s.*are\sany\sissues\.$")
+    ^\|The\sitem\syou\s.*are\sany\sissues\.$
+
+
+# REMOVE substrings in $desc beginning with "|The item you...within 7 days."
+    ^\|The\sitem\s.*days\."$
 
 # substrings begining and ending with "*"
-# ((\*)(.*)(?<=\*))
+    ((\*)(.*)(?<=\*))
 
 # uses of "|" as individual characters
 #
@@ -101,8 +109,7 @@ write_csv(as.data.frame(malts), "C:/malts/malts.csv")
 
 
 
-## Read output to restart analysis
-malts <- read_csv("C:/malts/malts.csv")
+
 
 malts_c <- malts %>% unite("tot_desc", desc, reviews, sep=" ")
 malts_c$name[1:3]
