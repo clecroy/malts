@@ -89,26 +89,42 @@ malts <- read_csv("C:/malts/malts.csv")
 
 ## Remove useless text related to special order only, preorder items, 
 ## other notification text.
-
+malts_test <- malts[1:25, ]
 # regex to use for substring removal, in THIS ORDER:
 
-# REMOVE substrings in $desc beginning with "|The item you...are any issues."
-str_replace(head(malts$desc), "^\|The\sitem\syou\s.*are\sany\sissues\.$")
-    ^\|The\sitem\syou\s.*are\sany\sissues\.$
+# REMOVE substrings in $desc beginning with "|The item you..."
+desc_trim <- str_trim(malts$desc)
+
+replace_1 <- str_replace(desc_trim, 
+                         "\\|The\\sitem\\syou\\s.*",
+                         "")
+
+# REMOVE all substrings beginning and ending with "*"
+replace_2 <- str_replace_all(replace_1, 
+                         "\\*[^*]+\\*",
+                         "")
+
+# REMOVE all substrings beginning with "(" and ending with ")"
+replace_3 <- str_replace_all(replace_2, 
+                             "\\(.*\\)",
+                             "")
+
+# REMOVE all substrings of "\r\n"
+replace_4 <- str_replace_all(replace_3, 
+                             "\\r\\n",
+                             "")  
 
 
-# REMOVE substrings in $desc beginning with "|The item you...within 7 days."
-    ^\|The\sitem\s.*days\."$
+# REMOVE all substrings of "      |      "
+final_desc <- str_trim(str_replace_all(replace_4, 
+                                      "\\s*\\|\\s*",
+                                      ""))
 
-# substrings begining and ending with "*"
-    ((\*)(.*)(?<=\*))
+malts_clean <- malts
+malts_clean[ ,3] <- final_desc
 
-# uses of "|" as individual characters
-#
-
-
-
-
+## Save output
+write_csv(as.data.frame(malts_clean), "C:/malts/malts_clean.csv")
 
 
 malts_c <- malts %>% unite("tot_desc", desc, reviews, sep=" ")
