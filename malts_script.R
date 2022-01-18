@@ -1,22 +1,28 @@
 library(tidyverse)
 library(lubridate)
 library(rvest)
-library(xml2)
-library(microbenchmark)
-library(parallel)
 library(textreuse)
 library(polite)
 library(robotstxt)
+library(httr)
+library(purrr)
 
-# session <- bow(malts_url)
-# session
+session <- bow(malts_url, force=TRUE)
+session
 
 ## Get product names and ids
 
   # Read html of spirits where variety == "malt", results >= 500
 malts_url <- "https://www.klwines.com/Products?&filters=sv2_206!27&limit=500&offset=0&orderBy=60%20asc,search.score()%20desc&searchText="
-kl <- read_html(url)
+kl <- read_html(malts_url)
+kl_slow <- slowly(~ GET(malts_url, user_agent("clecroy@bren.ucsb.edu")), rate=rate_delay(3))
+kl_s <- kl_slow()
+status_code(kl_s)
+  # Workaround for now using httr
 
+
+### "C:/malts/malts_source.html"
+  
   # Extract product names
 prod_name <- kl %>% 
   html_nodes('.tf-product-header') %>% 
@@ -78,7 +84,7 @@ malts$desc <- str_trim(unlist(lapply(malts_raw, function(x) x[[1]])))
 malts$reviews <- str_trim(unlist(lapply(malts_raw, function(x) x[[2]])))
 
 ## Save output
-write_csv(as.data.frame(malts), "C:/malts/malts.csv")
+write_csv(as.data.frame(malts), paste0("C:/malts/malts_", today(), ".csv"))
 
 ##################################################################
 ##################################################################
@@ -89,7 +95,6 @@ malts <- read_csv("C:/malts/malts.csv")
 
 ## Remove useless text related to special order only, preorder items, 
 ## other notification text.
-malts_test <- malts[1:25, ]
 # regex to use for substring removal, in THIS ORDER:
 
 # REMOVE substrings in $desc beginning with "|The item you..."
@@ -125,8 +130,3 @@ malts_clean[ ,3] <- final_desc
 
 ## Save output
 write_csv(as.data.frame(malts_clean), "C:/malts/malts_clean.csv")
-
-
-malts_c <- malts %>% unite("tot_desc", desc, reviews, sep=" ")
-malts_c$name[1:3]
-apply(malts_c$tot_desc, ant_join, )

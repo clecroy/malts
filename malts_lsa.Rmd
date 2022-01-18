@@ -1,0 +1,71 @@
+---
+title: "Single malt lsa"
+author: Chase LeCroy
+output: 
+  html_notebook:
+    toc: TRUE
+
+---
+```{r load-packages, include=FALSE}
+library(tidyverse)
+library(lubridate)
+library(tidytext)
+library(lsa)
+library(LSAfun)
+library(quanteda)
+library(quanteda.textmodels)
+```
+
+
+# Intro
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code.
+
+# Source data
+Data from [KL Wines](https://www.klwines.com/Products?&filters=sv2_206!27&limit=50&offset=0&orderBy=60%20asc,search.score()%20desc&searchText=).
+
+## Import and clean
+Import the csv and concatenate reviews and descriptions into "bags of words"
+```{r results = "hide"}
+malts <- read_csv("C:/malts/malts_clean.csv")
+malts_c <- malts %>% 
+           unite("text", desc, reviews)
+write_csv(malts_c, "C:/malts/malts_c.csv")
+```
+Create directory with each product as own file for textmatrix(function).
+```{r eval=FALSE, include=FALSE}
+malts_l <- (list)
+for(i in 1:length(malts_c[, 1])){
+  malts_l[i] <- malts_c[i, ]
+
+}
+malts_names <- malts_c[ , 2]
+malts_filenames <- paste0("C:/malts/malts_d", malts_names)
+
+lapply(malts_l, write_csv, malts_filenames)
+```
+
+
+#Analysis using quanteda and quanteda.textmodels
+
+Methodology inspiration from [Wang, H., ](https://quanteda.io/articles/pkgdown/examples/lsa.html).
+
+```{r}
+malt_dfm <- dfm(malts_c[ ,"text"])
+malt_lsa <- textmodel_lsa(malt_dfm)
+str(malt_lsa)
+```
+
+# Analysis using lsa and LSAfun
+Methodology inspiration from [Gefen, D. et al, 2017](https://www.researchgate.net/profile/Kai-Larsen/publication/321804167_A_Guide_to_Text_Analysis_with_Latent_Semantic_Analysis_in_R_with_Annotated_Code_Studying_Online_Reviews_and_the_Stack_Exchange_Community/links/5a38c46ca6fdccdd41fe6e7b/A-Guide-to-Text-Analysis-with-Latent-Semantic-Analysis-in-R-with-Annotated-Code-Studying-Online-Reviews-and-the-Stack-Exchange-Community.pdf?origin=publication_detail).
+
+
+## Creating the input matrix
+The lsa functions need weighted TDMs, so we create them from the imported csv. However, textmatrix() expects a directory full of documents so I need to go back and export each individual product as it's own file.
+```{r}
+TDM <- textmatrix("C:/malts/malts_c.csv", stopwords=c(stopwords_en, "whisky", "whiskey", "single", "malt"), stemming=TRUE,
+removeNumber=F) 
+head(TDM)
+
+```
+
+
