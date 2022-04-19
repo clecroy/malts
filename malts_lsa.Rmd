@@ -1,12 +1,14 @@
 ---
-title: "Single malt lsa"
+title: "Flavor matching whisky"
 author: Chase LeCroy
 output: 
   html_notebook:
     toc: TRUE
-
+slug: flavor-matching-whisky
+categories: R
+tags: lsa
 ---
-```{r load-packages, include=FALSE}
+```{r setup, include=FALSE}
 library(tidyverse)
 library(lubridate)
 library(tidytext)
@@ -14,7 +16,17 @@ library(lsa)
 library(LSAfun)
 library(quanteda)
 library(quanteda.textmodels)
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE,
+  fig.path = ""
+)
 ```
+
+
+# Can we identify whiskies with similar flavor profiles based on professional reviews?
 
 
 # Intro
@@ -33,15 +45,23 @@ write_csv(malts_c, "C:/malts/malts_c.csv")
 ```
 Create directory with each product as own file for textmatrix(function).
 ```{r eval=FALSE, include=FALSE}
-malts_l <- (list)
-for(i in 1:length(malts_c[, 1])){
-  malts_l[i] <- malts_c[i, ]
+malts_c <- read_csv("C:/malts/malts_c.csv")
+malts_l <- list()
+for(i in 1:length(malts_c$name)){
+  malts_l[[i]] <- malts_c[i, ]
 
 }
-malts_names <- malts_c[ , 2]
-malts_filenames <- paste0("C:/malts/malts_d", malts_names)
+malts_id <- malts_c$id
+malts_filenames <- paste0("C:/malts/malts_d/", malts_id, ".csv")
 
-lapply(malts_l, write_csv, malts_filenames)
+unlist_write <- function(x){
+  unlist(x)
+}
+
+invisible(
+  lapply(seq_along(malts_l), function(x){
+    write_csv(malts_l[[x]], malts_filenames[x])
+}))
 ```
 
 
@@ -50,9 +70,9 @@ lapply(malts_l, write_csv, malts_filenames)
 Methodology inspiration from [Wang, H., ](https://quanteda.io/articles/pkgdown/examples/lsa.html).
 
 ```{r}
-malt_dfm <- dfm(malts_c[ ,"text"])
-malt_lsa <- textmodel_lsa(malt_dfm)
-str(malt_lsa)
+# malt_dfm <- dfm(malts_c[ ,"text"])
+# malt_lsa <- textmodel_lsa(malt_dfm)
+# str(malt_lsa)
 ```
 
 # Analysis using lsa and LSAfun
@@ -62,10 +82,11 @@ Methodology inspiration from [Gefen, D. et al, 2017](https://www.researchgate.ne
 ## Creating the input matrix
 The lsa functions need weighted TDMs, so we create them from the imported csv. However, textmatrix() expects a directory full of documents so I need to go back and export each individual product as it's own file.
 ```{r}
-TDM <- textmatrix("C:/malts/malts_c.csv", stopwords=c(stopwords_en, "whisky", "whiskey", "single", "malt"), stemming=TRUE,
-removeNumber=F) 
+TDM <- textmatrix("C:/malts/malts_c.csv", 
+                  stopwords=c(stopwords_en, 
+                              "whisky", "whiskey", "single", "malt"), 
+                  stemming=TRUE,
+                  removeNumber=F)
 head(TDM)
-
 ```
-
 
